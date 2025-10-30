@@ -115,3 +115,42 @@ def main():
             break
 if __name__ == "__main__":
     main()
+
+import gamefunctions
+from gamefunctions import inventory, show_inventory, add_to_inventory, equip_item, use_special_item
+
+def main():
+    print("Welcome to the Adventure Game!")
+    print("-------------------------------")
+
+    show_inventory(inventory)
+
+    print("\nLet's add a new item to your inventory!")
+    new_item = {"name": "helmet", "type": "armor", "maxDurability": 5, "currentDurability": 5}
+    add_to_inventory(new_item, inventory)
+    show_inventory(inventory)
+
+    print("\nLet's equip a weapon!")
+    equipped_weapon = equip_item("weapon", inventory)
+    if equipped_weapon:
+        print(f"You are now wielding: {equipped_weapon['name']}")
+
+    print("\nLet's equip a shield!")
+    equipped_shield = equip_item("shield", inventory)
+    if equipped_shield:
+        print(f"You are now protected by: {equipped_shield['name']}")
+
+    print("\nA wild goblin appears!")
+    used = use_special_item(inventory, "goblin")
+    if used:
+        print("You used your special item successfully!")
+    else:
+        print("You didn't have a special item to use.")
+
+    print("\nFinal inventory:")
+    show_inventory(inventory)
+
+    print("\nThanks for playing!")
+
+if __name__ == "__main__":
+    main()

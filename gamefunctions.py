@@ -118,7 +118,78 @@ def print_shop_menu(item1Name: str, item1Price: float, item2Name: str, item2Pric
     print(f"| {item1Name:<12} ${item1Price:>7.2f} |")
     print(f"| {item2Name:<12} ${item2Price:>7.2f} |")
     print("/" + "-" * 22 + "\\")
+
 print_welcome("Diego", 24)
 print_welcome("Wade", 34)
 print_shop_menu("Bread", 20, "cheese", 15)
 print_shop_menu("juice", 5.23, "cake", 12.33)
+
+"""Inventory"""
+inventory = [
+  {"name": "sword", "type": "weapon", "maxDurability": 10, "currentDurability": 40},
+  {"name": "buckler", "type": "shield", "maxDurability": 6, "currentDurability": 20},
+  {"name": "rock", "type": "misc", "note": "defeats scissors"}
+]
+
+"""adding to inventory"""
+def add_to_inventory(item: dict, inventory: list) -> None:
+    inventory.append(item)
+    print(f"{item} has been added into your inventory!")
+
+"""show inventory"""
+def show_inventory(inventory: list) -> None:
+    if not inventory:
+        print("your inventory is vacant.")
+    else:
+        print("\nYour inventory:")
+        number = 1
+        for item in inventory:
+            if item["type"] in ["weapon", "shield"]:
+                print(f"{number}) {item['name']} ({item['type']}) - Durability: {item['currentDurability']}/{item['maxDurability']}")
+            else:
+                print(f"{number}) {item['name']} ({item['type']}) - Note: {item.get('note', '')}")
+            number += 1
+
+"""equipt item"""
+def equip_item(item_type: str, inventory: list) -> dict | None:
+    items_type = []
+    for item in inventory:
+        if item["type"] == item_type:
+            items_type. append(item)
+    if not items_type:
+        print(f"No items of type '{item_type}' available to equip.")
+        return None
+    print(f"\nItems available to equip ({item_type}):")
+    number = 1
+    for item in items_type:
+        print(f"{number}) {item['name']} (Durability: {item.get('currentDurability', 'N/A')})")
+        number += 1
+    print("0) None")
+    while True:
+        choice = input("Choose an item to equip: ").strip()
+        if choice.isdigit():
+            choice = int(choice)
+            if 0 <= choice <= len(items_type):
+                if choice == 0:
+                    print("No item equipped.")
+                    return None
+                equipped = items_type[choice - 1]
+                print(f"You equipped: {equipped['name']}")
+                return equipped
+        print("Invalid choice. Try again.")
+
+def use_special_item(inventory: list, monster_name: str) -> bool:
+    """instantly kill
+    """
+    for item in inventory:
+        if item["name"].lower() == "rock":
+            print(f"\nYou throw your {item['name']} at the {monster_name}!")
+            print(f"The {monster_name} is instantly defeated!")
+            inventory.remove(item)
+            print(f"{item['name']} has been removed from your inventory.")
+            return True
+
+    print("You have no special item to use!")
+    return False
+
+                     
