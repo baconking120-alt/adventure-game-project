@@ -4,6 +4,12 @@
 #Adam Azam
 #2025-september-27
 import random
+inventory = [
+    {"name": "sword", "type": "weapon", "maxDurability": 10, "currentDurability": 40},
+    {"name": "buckler", "type": "shield", "maxDurability": 6, "currentDurability": 20},
+    {"name": "rock", "type": "misc", "note": "defeats scissors"}
+    ]
+
 def purchase_item(item_price: int, starting_money: int, quantity_to_purchase: int = 1):
     """
     Attempt to purchase items given a price, starting money, and quantity desired.
@@ -81,34 +87,6 @@ def new_random_monster():
 
     return monster
 
-
-# -------------------------------
-# Test calls for purchase_item()
-# -------------------------------
-
-print("=== Testing purchase_item ===")
-
-# Case 1: Can afford all 3
-num_purchased, leftover = purchase_item(123, 1000, 3)
-print(f"Purchased: {num_purchased}, Leftover money: {leftover}")
-
-# Case 2: Cannot afford all 3, only buys 1
-num_purchased, leftover = purchase_item(123, 201, 3)
-print(f"Purchased: {num_purchased}, Leftover money: {leftover}")
-
-# Case 3: Using default quantity_to_purchase (should buy only 1)
-num_purchased, leftover = purchase_item(341, 2112)
-print(f"Purchased: {num_purchased}, Leftover money: {leftover}")
-
-print("\n=== Testing new_random_monster ===")
-
-# Call 3 times to demonstrate randomness
-for i in range(3):
-    monster = new_random_monster()
-    print(f"Monster {i+1}: {monster['name']}")
-    print(f"Description: {monster['description']}")
-    print(f"Health: {monster['health']}, Power: {monster['power']}, Money: {monster['money']}")
-    print()
 def print_welcome(name: str, width: int) -> None:
     message = f"Hello, {name}!"
     print(f"{message:^{width}}")
@@ -119,24 +97,11 @@ def print_shop_menu(item1Name: str, item1Price: float, item2Name: str, item2Pric
     print(f"| {item2Name:<12} ${item2Price:>7.2f} |")
     print("/" + "-" * 22 + "\\")
 
-print_welcome("Diego", 24)
-print_welcome("Wade", 34)
-print_shop_menu("Bread", 20, "cheese", 15)
-print_shop_menu("juice", 5.23, "cake", 12.33)
-
-"""Inventory"""
-inventory = [
-  {"name": "sword", "type": "weapon", "maxDurability": 10, "currentDurability": 40},
-  {"name": "buckler", "type": "shield", "maxDurability": 6, "currentDurability": 20},
-  {"name": "rock", "type": "misc", "note": "defeats scissors"}
-]
-
-"""adding to inventory"""
 def add_to_inventory(item: dict, inventory: list) -> None:
+    #adding to inventory
     inventory.append(item)
     print(f"{item} has been added into your inventory!")
 
-"""show inventory"""
 def show_inventory(inventory: list) -> None:
     if not inventory:
         print("your inventory is vacant.")
@@ -150,7 +115,6 @@ def show_inventory(inventory: list) -> None:
                 print(f"{number}) {item['name']} ({item['type']}) - Note: {item.get('note', '')}")
             number += 1
 
-"""equipt item"""
 def equip_item(item_type: str, inventory: list) -> dict | None:
     items_type = []
     for item in inventory:
@@ -179,8 +143,6 @@ def equip_item(item_type: str, inventory: list) -> dict | None:
         print("Invalid choice. Try again.")
 
 def use_special_item(inventory: list, monster_name: str) -> bool:
-    """instantly kill
-    """
     for item in inventory:
         if item["name"].lower() == "rock":
             print(f"\nYou throw your {item['name']} at the {monster_name}!")
@@ -193,3 +155,38 @@ def use_special_item(inventory: list, monster_name: str) -> bool:
     return False
 
                      
+if __name__ == "__main__":
+    # -------------------------------
+    # Test calls for purchase_item()
+    # -------------------------------
+
+    print("=== Testing purchase_item ===")
+
+    # Case 1: Can afford all 3
+    num_purchased, leftover = purchase_item(123, 1000, 3)
+    print(f"Purchased: {num_purchased}, Leftover money: {leftover}")
+
+    # Case 2: Cannot afford all 3, only buys 1
+    num_purchased, leftover = purchase_item(123, 201, 3)
+    print(f"Purchased: {num_purchased}, Leftover money: {leftover}")
+
+    # Case 3: Using default quantity_to_purchase (should buy only 1)
+    num_purchased, leftover = purchase_item(341, 2112)
+    print(f"Purchased: {num_purchased}, Leftover money: {leftover}")
+
+    print("\n=== Testing new_random_monster ===")
+
+    # Call 3 times to demonstrate randomness
+    for i in range(3):
+        monster = new_random_monster()
+        print(f"Monster {i+1}: {monster['name']}")
+        print(f"Description: {monster['description']}")
+        print(f"Health: {monster['health']}, Power: {monster['power']}, Money: {monster['money']}")
+        print()
+    
+    print_welcome("Diego", 24)
+    print_welcome("Wade", 34)
+    print_shop_menu("Bread", 20, "cheese", 15)
+    print_shop_menu("juice", 5.23, "cake", 12.33)
+
+

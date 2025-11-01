@@ -10,6 +10,8 @@ Typical usage example:
 """
 
 import gamefunctions
+from gamefunctions import new_random_monster
+
 
 def main():
     # Welcome the player
@@ -44,13 +46,13 @@ show a list of available options
 """
 import random
 import gamefunctions
-def get_valid_input(promt: str, valid_options: list[str]) -> str:
-    """Promt the player until he or she gets a valid input option
-""" 
-    choice = input(promt).strip()
+def get_valid_input(prompt: str, valid_options: list[str]) -> str:
+    """Prompt the player until he or she gets a valid input option.
+    """ 
+    choice = input(prompt).strip()
     while choice not in valid_options:
         print("Invalid choice, please try again.")
-        choice = input(promt).strip()
+        choice = input(prompt).strip()
     return choice
 def fight_monster(health: int, gold: int) -> tuple[int, int]:
     """shows players stats and fight with monster
@@ -123,34 +125,56 @@ def main():
     print("Welcome to the Adventure Game!")
     print("-------------------------------")
 
-    show_inventory(inventory)
 
-    print("\nLet's add a new item to your inventory!")
-    new_item = {"name": "helmet", "type": "armor", "maxDurability": 5, "currentDurability": 5}
-    add_to_inventory(new_item, inventory)
-    show_inventory(inventory)
+    while True:
+        print("\nMain Menu:")
+        print("1) Show Inventory")
+        print("2) Add Item to Inventory")
+        print("3) Equip Weapon")
+        print("4) Equip Shield")
+        print("5) Use Special Item")
+        print("6) Quit")
 
-    print("\nLet's equip a weapon!")
-    equipped_weapon = equip_item("weapon", inventory)
-    if equipped_weapon:
-        print(f"You are now wielding: {equipped_weapon['name']}")
+        choice = input("Choose an option: ").strip()
 
-    print("\nLet's equip a shield!")
-    equipped_shield = equip_item("shield", inventory)
-    if equipped_shield:
-        print(f"You are now protected by: {equipped_shield['name']}")
+        if choice == "1":
+            show_inventory(inventory)
 
-    print("\nA wild goblin appears!")
-    used = use_special_item(inventory, "goblin")
-    if used:
-        print("You used your special item successfully!")
-    else:
-        print("You didn't have a special item to use.")
+        elif choice == "2":
+            new_item = {"name": "helmet", "type": "armor", "maxDurability": 5, "currentDurability": 5}
+            add_to_inventory(new_item, inventory)
 
-    print("\nFinal inventory:")
-    show_inventory(inventory)
+        elif choice == "3":
+            equipped_weapon = equip_item("weapon", inventory)
+            if equipped_weapon:
+                print(f"You are now wielding: {equipped_weapon['name']}")
 
-    print("\nThanks for playing!")
+        elif choice == "4":
+            equipped_shield = equip_item("shield", inventory)
+            if equipped_shield:
+                print(f"You are now protected by: {equipped_shield['name']}")
+
+        elif choice == "5":
+            monster = new_random_monster()
+            print(f"\nA wild {monster['name']} appears!")
+            print(monster["description"])
+
+            used = use_special_item(inventory, monster["name"])
+            if used:
+                print("You used your special item successfully!")
+            else:
+                print("You didn't have a special item to use.")
+
+        elif choice == "6":
+            print("Farewell, adventurer!")
+            break
+
+        else:
+            print("Invalid choice. Try again.")
+
 
 if __name__ == "__main__":
     main()
+
+
+
