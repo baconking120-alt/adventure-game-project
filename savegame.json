@@ -1,0 +1,22 @@
+{
+    "health": 15,
+    "gold": 95,
+    "inventory": [
+        {
+            "name": "sword",
+            "type": "weapon",
+            "maxDurability": 10,
+            "currentDurability": 10
+        },
+        {
+            "name": "buckler",
+            "type": "shield",
+            "maxDurability": 6,
+            "currentDurability": 6
+        },
+        {
+            "name": "Cheese",
+            "type": "consumable"
+        }
+    ]
+}
