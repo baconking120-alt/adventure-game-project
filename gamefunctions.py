@@ -1,6 +1,8 @@
-# gamefunctions.py
-# Adam Azam
-# 2025-September-27
+
+
+#gamefunctions.py
+#Adam Azam
+#2025-september-27
 
 import random
 

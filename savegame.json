@@ -1,6 +1,6 @@
 {
-    "health": 15,
-    "gold": 95,
+    "health": 6,
+    "gold": 144,
     "inventory": [
         {
             "name": "sword",
@@ -15,7 +15,7 @@
             "currentDurability": 6
         },
         {
-            "name": "Cheese",
+            "name": "Potion",
             "type": "consumable"
         }
     ]
