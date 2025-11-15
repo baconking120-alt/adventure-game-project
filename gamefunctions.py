@@ -7,6 +7,9 @@
 import random
 
 # Starting Inventory
+import random
+
+# Starting Inventory
 inventory = [
     {"name": "sword", "type": "weapon", "maxDurability": 10, "currentDurability": 10},
     {"name": "buckler", "type": "shield", "maxDurability": 6, "currentDurability": 6},
@@ -56,10 +59,12 @@ def new_random_monster():
     }
 
 def print_welcome(name: str, width: int) -> None:
+    """Print a centered welcome message."""
     message = f"Hello, {name}!"
     print(f"{message:^{width}}")
 
 def print_shop_menu(item1Name: str, item1Price: float, item2Name: str, item2Price: float) -> None:
+    """Print a simple shop menu with two items (unused in current version)."""
     border = "/" + "-" * 22 + "\\"
     print(border)
     print(f"| {item1Name:<12} ${item1Price:>7.2f} |")

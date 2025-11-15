@@ -1,6 +1,6 @@
 {
-    "health": 6,
-    "gold": 144,
+    "health": 30,
+    "gold": 6,
     "inventory": [
         {
             "name": "sword",
@@ -15,8 +15,28 @@
             "currentDurability": 6
         },
         {
-            "name": "Potion",
+            "name": "rock",
+            "type": "misc",
+            "note": "defeats one monster instantly"
+        },
+        {
+            "name": "Bread",
             "type": "consumable"
         }
-    ]
+    ],
+    "map_state": {
+        "player_pos": [
+            0,
+            0
+        ],
+        "town_pos": [
+            0,
+            0
+        ],
+        "monster_pos": [
+            5,
+            5
+        ],
+        "visited_town": true
+    }
 }

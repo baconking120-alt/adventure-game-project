@@ -15,6 +15,7 @@ Typical usage example:
 
 import random
 import json
+import pygame
 from gamefunctions import (
     inventory,
     show_inventory,
@@ -28,8 +29,26 @@ from gamefunctions import (
 
 SAVE_FILENAME = "savegame.json"
 
+# Map constants
+GRID_SIZE = 10
+TILE_SIZE = 32
+WIDTH = GRID_SIZE * TILE_SIZE
+HEIGHT = GRID_SIZE * TILE_SIZE
+
+BG_COLOR = (30, 30, 30)
+GRID_COLOR = (60, 60, 60)
+PLAYER_COLOR = (0, 150, 255)
+TOWN_COLOR = (0, 200, 0)
+MONSTER_COLOR = (200, 0, 0)
+
+DEFAULT_MAP_STATE = {
+    "player_pos": (0, 0),
+    "town_pos": (0, 0),
+    "monster_pos": (5, 5),
+    "visited_town": False
+}
+
 def get_valid_input(prompt: str, valid_options: list[str]) -> str:
-    """Prompt the player until a valid input is entered."""
     while True:
         try:
             choice = input(prompt).strip()
@@ -41,7 +60,6 @@ def get_valid_input(prompt: str, valid_options: list[str]) -> str:
         print("Invalid choice. Try again.")
 
 def fight_monster(health: int, gold: int) -> tuple[int, int]:
-    """Handles a fight with a random monster."""
     monster = new_random_monster()
     monster_health = monster["health"]
     monster_power = monster["power"]
@@ -70,7 +88,7 @@ def fight_monster(health: int, gold: int) -> tuple[int, int]:
         elif choice == "3":
             used = use_special_item(inventory, monster["name"])
             if used:
-                monster_health = 0  # instant defeat
+                monster_health = 0
 
     if health <= 0:
         print("\nYou were defeated...")
@@ -82,7 +100,6 @@ def fight_monster(health: int, gold: int) -> tuple[int, int]:
     return health, gold
 
 def shop_menu(gold: int) -> int:
-    """Display a shop with multiple items and handle purchases."""
     items = [
         {"name": "Bread", "price": 20},
         {"name": "Cheese", "price": 15},
@@ -121,33 +138,97 @@ def shop_menu(gold: int) -> int:
             else:
                 print("You cannot afford this item.")
 
-def save_game(health: int, gold: int, filename: str = SAVE_FILENAME):
-    """Save the current game state to a JSON file."""
-    save_data = {
-        "health": health,
-        "gold": gold,
-        "inventory": inventory
-    }
+def save_game(health: int, gold: int, map_state: dict, filename: str = SAVE_FILENAME):
+    save_data = {"health": health, "gold": gold, "inventory": inventory, "map_state": map_state}
     with open(filename, "w") as f:
         json.dump(save_data, f, indent=4)
     print(f"Game saved to {filename}!")
 
-def load_game(filename: str = SAVE_FILENAME) -> tuple[int, int]:
-    """Load the game state from a JSON file."""
+def load_game(filename: str = SAVE_FILENAME) -> tuple[int, int, dict]:
     try:
         with open(filename, "r") as f:
             data = json.load(f)
-        # Clear current inventory and load saved inventory
         inventory.clear()
-        inventory.extend(data["inventory"])
-        print(f"Game loaded from {filename}!")
-        return data["health"], data["gold"]
+        inventory.extend(data.get("inventory", []))
+        map_state = data.get("map_state", DEFAULT_MAP_STATE.copy())
+        return data.get("health", 30), data.get("gold", 15), map_state
     except FileNotFoundError:
         print("No save file found. Starting new game.")
-        return 30, 15  # default starting HP and gold
+        return 30, 15, DEFAULT_MAP_STATE.copy()
 
+# ---------------- MAP FUNCTION ----------------
+def start_map(map_state: dict) -> tuple[str, dict]:
+    pygame.init()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Adventure Map")
+    clock = pygame.time.Clock()
+
+    player_x, player_y = map_state.get("player_pos", (0, 0))
+    town_pos = tuple(map_state.get("town_pos", (0, 0)))
+    monster_pos = tuple(map_state.get("monster_pos", (5, 5)))
+    visited_town = bool(map_state.get("visited_town", False))
+
+    running = True
+    action = None
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                action = "quit_pygame"
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                dx, dy = 0, 0
+                if event.key == pygame.K_UP: dy = -1
+                elif event.key == pygame.K_DOWN: dy = 1
+                elif event.key == pygame.K_LEFT: dx = -1
+                elif event.key == pygame.K_RIGHT: dx = 1
+
+                if dx or dy:
+                    player_x = max(0, min(GRID_SIZE - 1, player_x + dx))
+                    player_y = max(0, min(GRID_SIZE - 1, player_y + dy))
+
+                    if (player_x, player_y) != town_pos:
+                        visited_town = True
+
+                    if (player_x, player_y) == town_pos and visited_town:
+                        action = "town"
+                        running = False
+                    elif (player_x, player_y) == monster_pos:
+                        action = "monster"
+                        running = False
+
+        # Draw grid
+        screen.fill(BG_COLOR)
+        for i in range(GRID_SIZE + 1):
+            pygame.draw.line(screen, GRID_COLOR, (i * TILE_SIZE, 0), (i * TILE_SIZE, HEIGHT))
+            pygame.draw.line(screen, GRID_COLOR, (0, i * TILE_SIZE), (WIDTH, i * TILE_SIZE))
+
+        # Town
+        cx, cy = town_pos[0]*TILE_SIZE+TILE_SIZE//2, town_pos[1]*TILE_SIZE+TILE_SIZE//2
+        pygame.draw.circle(screen, TOWN_COLOR, (cx, cy), TILE_SIZE//3)
+
+        # Monster
+        cx, cy = monster_pos[0]*TILE_SIZE+TILE_SIZE//2, monster_pos[1]*TILE_SIZE+TILE_SIZE//2
+        pygame.draw.circle(screen, MONSTER_COLOR, (cx, cy), TILE_SIZE//3)
+
+        # Player
+        rect = pygame.Rect(player_x*TILE_SIZE, player_y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+        pygame.draw.rect(screen, PLAYER_COLOR, rect)
+
+        pygame.display.flip()
+        clock.tick(60)
+
+    pygame.quit()
+    updated_state = {
+        "player_pos": (player_x, player_y),
+        "town_pos": town_pos,
+        "monster_pos": monster_pos,
+        "visited_town": visited_town
+    }
+    return action, updated_state
+
+# ---------------- MAIN LOOP ----------------
 def main():
-    """Main game loop with save/load, town options, inventory, and shop."""
     print("Welcome to the Adventure Game!")
     print("-------------------------------")
     print("1) New Game")
@@ -159,15 +240,16 @@ def main():
         name = input("Enter your name, brave adventurer: ")
         health = 30
         gold = 15
+        map_state = DEFAULT_MAP_STATE.copy()
     else:
         name = input("Enter your name for loading: ")
-        health, gold = load_game()
+        health, gold, map_state = load_game()
 
     print_welcome(name, 40)
 
     while True:
         print(f"\nYou are in town. HP: {health} | Gold: {gold}")
-        print("1) Leave town (Fight Monster)")
+        print("1) Leave town (Explore Map)")
         print("2) Sleep (Restore HP for 5 Gold)")
         print("3) Inventory")
         print("4) Shop")
@@ -177,7 +259,22 @@ def main():
         choice = get_valid_input("> ", ["1", "2", "3", "4", "5", "6"])
 
         if choice == "1":
-            health, gold = fight_monster(health, gold)
+            # Enter map; handle transitions
+            while True:
+                action, map_state = start_map(map_state)
+
+                if action == "quit_pygame":
+                    print("Game closed abruptly. Exiting without saving.")
+                    return
+                elif action == "town":
+                    break
+                elif action == "monster":
+                    health, gold = fight_monster(health, gold)
+                    if health <= 0:
+                        print("You died. Game over.")
+                        return
+                    continue
+
         elif choice == "2":
             if gold >= 5:
                 gold -= 5
@@ -203,7 +300,7 @@ def main():
         elif choice == "4":
             gold = shop_menu(gold)
         elif choice == "5":
-            save_game(health, gold)
+            save_game(health, gold, map_state)
             print("Exiting game. Goodbye!")
             break
         elif choice == "6":
