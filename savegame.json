@@ -1,6 +1,6 @@
 {
     "health": 30,
-    "gold": 6,
+    "gold": 10,
     "inventory": [
         {
             "name": "sword",
@@ -18,10 +18,6 @@
             "name": "rock",
             "type": "misc",
             "note": "defeats one monster instantly"
-        },
-        {
-            "name": "Bread",
-            "type": "consumable"
         }
     ],
     "map_state": {
@@ -37,6 +33,6 @@
             5,
             5
         ],
-        "visited_town": true
+        "visited_town": false
     }
 }

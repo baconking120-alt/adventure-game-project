@@ -4,9 +4,9 @@
 #Adam Azam
 #2025-september-27
 
-import random
 
-# Starting Inventory
+# gamefunctions.py
+
 import random
 
 # Starting Inventory
@@ -16,6 +16,7 @@ inventory = [
     {"name": "rock", "type": "misc", "note": "defeats one monster instantly"}
 ]
 
+# ---------------- SHOP HELPERS ----------------
 def purchase_item(item_price: int, starting_money: int, quantity_to_purchase: int = 1):
     """Attempt to purchase items given a price, starting money, and quantity desired."""
     max_affordable = starting_money // item_price
@@ -23,8 +24,9 @@ def purchase_item(item_price: int, starting_money: int, quantity_to_purchase: in
     remaining_money = starting_money - (items_bought * item_price)
     return items_bought, remaining_money
 
+# ---------------- MONSTER (LEGACY) ----------------
 def new_random_monster():
-    """Generate a random monster with randomized stats."""
+    """Legacy function for backward compatibility. Generates a random monster dict."""
     monsters = [
         {
             "name": "Gnome",
@@ -58,6 +60,7 @@ def new_random_monster():
         "money": random.randint(*m["money_range"])
     }
 
+# ---------------- UI HELPERS ----------------
 def print_welcome(name: str, width: int) -> None:
     """Print a centered welcome message."""
     message = f"Hello, {name}!"
@@ -71,6 +74,7 @@ def print_shop_menu(item1Name: str, item1Price: float, item2Name: str, item2Pric
     print(f"| {item2Name:<12} ${item2Price:>7.2f} |")
     print("\\" + "-" * 22 + "/")
 
+# ---------------- INVENTORY ----------------
 def add_to_inventory(item: dict, inventory: list) -> None:
     """Add an item to the player's inventory."""
     inventory.append(item)
@@ -85,12 +89,19 @@ def show_inventory(inventory: list) -> None:
     print("\nYour Inventory:")
     for i, item in enumerate(inventory, start=1):
         if item["type"] in ["weapon", "shield"]:
-            print(f"{i}) {item['name']} ({item['type']}) - Durability: {item['currentDurability']}/{item['maxDurability']}")
+            equipped_tag = " (equipped)" if item.get("equipped") else ""
+            print(
+                f"{i}) {item['name']} ({item['type']}){equipped_tag} - "
+                f"Durability: {item['currentDurability']}/{item['maxDurability']}"
+            )
         else:
-            print(f"{i}) {item['name']} ({item['type']}) - {item.get('note','')}")
+            note = item.get('note', '')
+            print(f"{i}) {item['name']} ({item['type']}) - {note}")
 
 def equip_item(item_type: str, inventory: list):
-    """Let the player choose and equip an item of a given type."""
+    """Let the player choose and equip an item of a given type.
+    Returns the equipped item (or None). Also marks it as 'equipped' for visibility.
+    """
     items = [item for item in inventory if item["type"] == item_type]
 
     if not items:
@@ -110,7 +121,12 @@ def equip_item(item_type: str, inventory: list):
                 print("You equipped nothing.")
                 return None
             if 1 <= choice <= len(items):
+                # Clear previous equipped of same type
+                for it in inventory:
+                    if it["type"] == item_type:
+                        it["equipped"] = False
                 equipped = items[choice - 1]
+                equipped["equipped"] = True
                 print(f"You equipped: {equipped['name']}")
                 return equipped
         print("Invalid choice, try again.")
