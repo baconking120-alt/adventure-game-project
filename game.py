@@ -8,7 +8,7 @@ Typical usage example:
 
     python game.py
 """
-#game.py
+# game.py
 
 import random
 import json
@@ -22,7 +22,6 @@ from gamefunctions import (
     print_welcome,
     purchase_item,
 )
-
 from wanderingMonster import (
     Monster,
     monsters_from_state,
@@ -56,6 +55,7 @@ DEFAULT_MAP_STATE = {
 }
 
 PLAYER_IMG: pygame.Surface | None = None
+
 # ---------------- INPUT HELPERS ----------------
 def get_valid_input(prompt: str, valid_options: list[str]) -> str:
     while True:
@@ -171,8 +171,7 @@ def fight_monster_entity(monster: Monster, health: int, gold: int) -> tuple[int,
         print(f"\nYou defeated the {monster_name} and earned {monster_money} gold!")
         return health, gold, True
 
-
-
+# ---------------- PLAYER IMAGE ----------------
 def load_player_image(tile_size: int = DEFAULT_TILE_SIZE) -> None:
     global PLAYER_IMG
     try:
@@ -188,10 +187,9 @@ def start_map(map_state: dict) -> tuple[str, dict, int | None]:
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Adventure Map")
     clock = pygame.time.Clock()
-    
+
     # Load images
     load_monster_images()
-    
 
     player_x, player_y = map_state.get("player_pos", (0, 0))
     town_pos = tuple(map_state.get("town_pos", (0, 0)))
@@ -253,7 +251,7 @@ def start_map(map_state: dict) -> tuple[str, dict, int | None]:
         # Draw monsters
         draw_monsters(screen, monsters, TILE_SIZE)
 
-        # Draw player using image
+        # Draw player
         if PLAYER_IMG:
             rect = PLAYER_IMG.get_rect()
             rect.topleft = (player_x*TILE_SIZE, player_y*TILE_SIZE)
@@ -272,6 +270,33 @@ def start_map(map_state: dict) -> tuple[str, dict, int | None]:
         "monsters": monsters_to_state(monsters),
     }
     return action, updated_state, encounter_index
+
+# ---------------- MINI-GAME ----------------
+def guessing_game(gold: int) -> int:
+    if gold < 5:
+        print("You don't have enough gold to play the guessing game.")
+        return gold
+
+    gold -= 5
+    print("\nWelcome to the Guessing Game! You paid 5 gold to play.")
+    print("Guess the number I'm thinking of between 1 and 10!")
+
+    secret_number = random.randint(1, 10)  # generate number first
+
+    try:
+        guess = int(input("Enter your guess: "))
+    except ValueError:
+        print(f"Invalid input. The correct number was {secret_number}. You lose this round.")
+        return gold
+
+    if guess == secret_number:
+        gold += 100
+        print(f"Congratulations! You guessed correctly! The number was {secret_number}. You won 100 gold!")
+    else:
+        print(f"Sorry! The correct number was {secret_number}. Better luck next time.")
+
+    print(f"You now have {gold} gold.")
+    return gold
 
 # ---------------- MAIN LOOP ----------------
 def main():
@@ -299,15 +324,15 @@ def main():
         print("2) Sleep (Restore HP for 5 Gold)")
         print("3) Inventory")
         print("4) Shop")
-        print("5) Save & Quit")
-        print("6) Quit without saving")
+        print("5) Play Guessing Game (Costs 5 Gold)")
+        print("6) Save & Quit")
+        print("7) Quit without saving")
 
-        choice = get_valid_input("> ", ["1","2","3","4","5","6"])
+        choice = get_valid_input("> ", ["1","2","3","4","5","6","7"])
 
         if choice == "1":
             while True:
                 action, map_state, encounter_index = start_map(map_state)
-
                 if action == "quit_pygame":
                     print("Game closed abruptly. Exiting without saving.")
                     return
@@ -352,10 +377,12 @@ def main():
         elif choice == "4":
             gold = shop_menu(gold)
         elif choice == "5":
+            gold = guessing_game(gold)
+        elif choice == "6":
             save_game(health, gold, map_state)
             print("Exiting game. Goodbye!")
             break
-        elif choice == "6":
+        elif choice == "7":
             print("Exiting game without saving. Goodbye!")
             break
 
