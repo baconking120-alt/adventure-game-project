@@ -8,15 +8,11 @@ Typical usage example:
 
     python game.py
 """
-
-
-# game.py
-# Main game loop
+#game.py
 
 import random
 import json
 import pygame
-
 from gamefunctions import (
     inventory,
     show_inventory,
@@ -27,7 +23,6 @@ from gamefunctions import (
     purchase_item,
 )
 
-# Import the wandering monster system (matches your file name: wanderingMonster.py)
 from wanderingMonster import (
     Monster,
     monsters_from_state,
@@ -35,39 +30,39 @@ from wanderingMonster import (
     ensure_two_monsters,
     move_monsters_every_other,
     collision_index,
-    respawn_if_cleared,
+    draw_monsters,
+    load_monster_images,
 )
 
 SAVE_FILENAME = "savegame.json"
+import os
+MEDIA_FOLDER = "combat_media"
 
 # Map constants
 GRID_SIZE = 10
 TILE_SIZE = 32
 WIDTH = GRID_SIZE * TILE_SIZE
 HEIGHT = GRID_SIZE * TILE_SIZE
-
+DEFAULT_TILE_SIZE = 32
 BG_COLOR = (30, 30, 30)
 GRID_COLOR = (60, 60, 60)
-PLAYER_COLOR = (0, 150, 255)
 TOWN_COLOR = (0, 200, 0)
 
 DEFAULT_MAP_STATE = {
     "player_pos": (0, 0),
     "town_pos": (0, 0),
-    "monsters": [],          # persistent monsters list (serialized as dicts)
+    "monsters": [],
     "visited_town": False,
 }
 
+PLAYER_IMG: pygame.Surface | None = None
 # ---------------- INPUT HELPERS ----------------
 def get_valid_input(prompt: str, valid_options: list[str]) -> str:
     while True:
         try:
             choice = input(prompt).strip()
-        except EOFError:
+        except (EOFError, KeyboardInterrupt):
             print("\nInput ended. Exiting game.")
-            exit()
-        except KeyboardInterrupt:
-            print("\nInterrupted. Exiting game.")
             exit()
         if choice in valid_options:
             return choice
@@ -101,17 +96,13 @@ def shop_menu(gold: int) -> int:
             selected_item = items[choice-1]
             try:
                 quantity = int(input(f"How many {selected_item['name']} do you want to buy? "))
-            except KeyboardInterrupt:
-                print("\nInterrupted. Returning to shop menu.")
-                continue
-            except ValueError:
+            except (KeyboardInterrupt, ValueError):
                 print("Invalid input. Returning to shop menu.")
                 continue
 
             purchased, remaining_gold = purchase_item(selected_item["price"], gold, quantity)
             gold = remaining_gold
             if purchased > 0:
-                # add one item entry per purchased unit (simple inventory)
                 for _ in range(purchased):
                     add_to_inventory({"name": selected_item["name"], "type": "consumable"}, inventory)
                 print(f"Purchased {purchased} x {selected_item['name']}. You have ${gold} left.")
@@ -120,7 +111,6 @@ def shop_menu(gold: int) -> int:
 
 # ---------------- SAVE / LOAD ----------------
 def save_game(health: int, gold: int, map_state: dict, filename: str = SAVE_FILENAME):
-    # ensure monsters are serialized to dicts
     mons = map_state.get("monsters", [])
     map_state["monsters"] = [m if isinstance(m, dict) else m.to_dict() for m in mons]
     save_data = {"health": health, "gold": gold, "inventory": inventory, "map_state": map_state}
@@ -135,7 +125,6 @@ def load_game(filename: str = SAVE_FILENAME) -> tuple[int, int, dict]:
         inventory.clear()
         inventory.extend(data.get("inventory", []))
         map_state = data.get("map_state", DEFAULT_MAP_STATE.copy())
-        # ensure monsters is a list of dicts
         map_state["monsters"] = list(map_state.get("monsters", []))
         return data.get("health", 30), data.get("gold", 15), map_state
     except FileNotFoundError:
@@ -144,7 +133,6 @@ def load_game(filename: str = SAVE_FILENAME) -> tuple[int, int, dict]:
 
 # ---------------- COMBAT ----------------
 def fight_monster_entity(monster: Monster, health: int, gold: int) -> tuple[int, int, bool]:
-    """Fight a specific Monster. Returns (health, gold, defeated_flag)."""
     monster_health = int(monster.health)
     monster_power = int(monster.power)
     monster_name = monster.name
@@ -183,28 +171,42 @@ def fight_monster_entity(monster: Monster, health: int, gold: int) -> tuple[int,
         print(f"\nYou defeated the {monster_name} and earned {monster_money} gold!")
         return health, gold, True
 
+
+
+def load_player_image(tile_size: int = DEFAULT_TILE_SIZE) -> None:
+    global PLAYER_IMG
+    try:
+        PLAYER_IMG = pygame.image.load(os.path.join(MEDIA_FOLDER, "DarkMan.png")).convert_alpha()
+        PLAYER_IMG = pygame.transform.scale(PLAYER_IMG, (tile_size, tile_size))
+    except FileNotFoundError:
+        print("Player image 'DarkMan.png' not found in 'combat_media' folder.")
+        PLAYER_IMG = None
+
 # ---------------- MAP LOOP ----------------
 def start_map(map_state: dict) -> tuple[str, dict, int | None]:
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Adventure Map")
     clock = pygame.time.Clock()
+    
+    # Load images
+    load_monster_images()
+    
 
     player_x, player_y = map_state.get("player_pos", (0, 0))
     town_pos = tuple(map_state.get("town_pos", (0, 0)))
     visited_town = bool(map_state.get("visited_town", False))
 
-    # Build monster objects from saved dicts
     saved_monsters = map_state.get("monsters", [])
     monsters = monsters_from_state(saved_monsters)
-
-    # Spawn two monsters if none present
     monsters = ensure_two_monsters(monsters, GRID_SIZE, town_pos, (player_x, player_y))
+
+    load_player_image()
 
     running = True
     action = None
     encounter_index: int | None = None
-    move_count = 0  # track player moves
+    move_count = 0
 
     while running:
         for event in pygame.event.get():
@@ -218,53 +220,46 @@ def start_map(map_state: dict) -> tuple[str, dict, int | None]:
                 elif event.key == pygame.K_LEFT: dx = -1
                 elif event.key == pygame.K_RIGHT: dx = 1
                 elif event.key == pygame.K_ESCAPE:
-                    # Quick return to town
                     action = "town"
                     running = False
 
                 if dx or dy:
-                    # Player move
                     player_x = max(0, min(GRID_SIZE - 1, player_x + dx))
                     player_y = max(0, min(GRID_SIZE - 1, player_y + dy))
                     move_count += 1
-
                     if (player_x, player_y) != town_pos:
                         visited_town = True
 
-                    # Monster moves every other player move
                     move_monsters_every_other(monsters, GRID_SIZE, town_pos, move_count)
-
-                    # Check collision (player on any monster)
                     enc_idx = collision_index(monsters, (player_x, player_y))
                     if enc_idx is not None:
                         action = "monster"
                         encounter_index = enc_idx
                         running = False
-
-                    # Return to town if stepping onto town after leaving
                     if (player_x, player_y) == town_pos and visited_town and action is None:
                         action = "town"
                         running = False
 
-        # Draw grid
+        # Draw background/grid
         screen.fill(BG_COLOR)
         for i in range(GRID_SIZE + 1):
             pygame.draw.line(screen, GRID_COLOR, (i * TILE_SIZE, 0), (i * TILE_SIZE, HEIGHT))
             pygame.draw.line(screen, GRID_COLOR, (0, i * TILE_SIZE), (WIDTH, i * TILE_SIZE))
 
-        # Town
-        cx, cy = town_pos[0]*TILE_SIZE+TILE_SIZE//2, town_pos[1]*TILE_SIZE+TILE_SIZE//2
+        # Draw town
+        cx, cy = town_pos[0]*TILE_SIZE + TILE_SIZE//2, town_pos[1]*TILE_SIZE + TILE_SIZE//2
         pygame.draw.circle(screen, TOWN_COLOR, (cx, cy), TILE_SIZE//3)
 
-        # Monsters (distinct colors)
-        for m in monsters:
-            mx, my = m.pos
-            cx, cy = mx*TILE_SIZE+TILE_SIZE//2, my*TILE_SIZE+TILE_SIZE//2
-            pygame.draw.circle(screen, m.color, (cx, cy), TILE_SIZE//3)
+        # Draw monsters
+        draw_monsters(screen, monsters, TILE_SIZE)
 
-        # Player
-        rect = pygame.Rect(player_x*TILE_SIZE, player_y*TILE_SIZE, TILE_SIZE, TILE_SIZE)
-        pygame.draw.rect(screen, PLAYER_COLOR, rect)
+        # Draw player using image
+        if PLAYER_IMG:
+            rect = PLAYER_IMG.get_rect()
+            rect.topleft = (player_x*TILE_SIZE, player_y*TILE_SIZE)
+            screen.blit(PLAYER_IMG, rect)
+        else:
+            pygame.draw.rect(screen, (0,150,255), (player_x*TILE_SIZE, player_y*TILE_SIZE, TILE_SIZE, TILE_SIZE))
 
         pygame.display.flip()
         clock.tick(60)
@@ -274,7 +269,6 @@ def start_map(map_state: dict) -> tuple[str, dict, int | None]:
         "player_pos": (player_x, player_y),
         "town_pos": town_pos,
         "visited_town": visited_town,
-        # Persist monsters as dicts
         "monsters": monsters_to_state(monsters),
     }
     return action, updated_state, encounter_index
@@ -308,10 +302,9 @@ def main():
         print("5) Save & Quit")
         print("6) Quit without saving")
 
-        choice = get_valid_input("> ", ["1", "2", "3", "4", "5", "6"])
+        choice = get_valid_input("> ", ["1","2","3","4","5","6"])
 
         if choice == "1":
-            # Enter map; handle transitions
             while True:
                 action, map_state, encounter_index = start_map(map_state)
 
@@ -321,7 +314,6 @@ def main():
                 elif action == "town":
                     break
                 elif action == "monster":
-                    # Fight the specific encountered monster
                     mons_dicts = map_state.get("monsters", [])
                     mons = monsters_from_state(mons_dicts)
                     if encounter_index is not None and 0 <= encounter_index < len(mons):
@@ -331,9 +323,7 @@ def main():
                             print("You died. Game over.")
                             return
                         if defeated:
-                            # Remove defeated monster
                             mons.pop(encounter_index)
-                            # If none left, spawn two new immediately (persisted)
                             if not mons:
                                 avoid_town = tuple(map_state["town_pos"])
                                 player_pos = tuple(map_state["player_pos"])
@@ -355,14 +345,10 @@ def main():
                 print("1) Equip Weapon")
                 print("2) Equip Shield")
                 print("3) Return to Town")
-
-                inv_choice = get_valid_input("> ", ["1", "2", "3"])
-                if inv_choice == "1":
-                    equip_item("weapon", inventory)
-                elif inv_choice == "2":
-                    equip_item("shield", inventory)
-                elif inv_choice == "3":
-                    break
+                inv_choice = get_valid_input("> ", ["1","2","3"])
+                if inv_choice == "1": equip_item("weapon", inventory)
+                elif inv_choice == "2": equip_item("shield", inventory)
+                elif inv_choice == "3": break
         elif choice == "4":
             gold = shop_menu(gold)
         elif choice == "5":
@@ -377,4 +363,4 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\nInterrupted. Exiting game.")
+        print("\nGame interrupted. Exiting.")

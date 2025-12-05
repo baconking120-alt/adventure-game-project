@@ -1,23 +1,32 @@
 {
     "health": 30,
-    "gold": 10,
+    "gold": 67,
     "inventory": [
         {
             "name": "sword",
             "type": "weapon",
             "maxDurability": 10,
-            "currentDurability": 10
+            "currentDurability": 10,
+            "equipped": true
         },
         {
             "name": "buckler",
             "type": "shield",
             "maxDurability": 6,
-            "currentDurability": 6
+            "currentDurability": 6,
+            "equipped": true
         },
         {
-            "name": "rock",
-            "type": "misc",
-            "note": "defeats one monster instantly"
+            "name": "Juice",
+            "type": "consumable"
+        },
+        {
+            "name": "Juice",
+            "type": "consumable"
+        },
+        {
+            "name": "Juice",
+            "type": "consumable"
         }
     ],
     "map_state": {
@@ -29,10 +38,32 @@
             0,
             0
         ],
-        "monster_pos": [
-            5,
-            5
-        ],
-        "visited_town": false
+        "visited_town": true,
+        "monsters": [
+            {
+                "name": "Troll",
+                "mtype": "Troll",
+                "pos": [
+                    2,
+                    4
+                ],
+                "health": 33,
+                "power": 17,
+                "money": 51,
+                "alive": true
+            },
+            {
+                "name": "Imp",
+                "mtype": "Imp",
+                "pos": [
+                    4,
+                    8
+                ],
+                "health": 22,
+                "power": 9,
+                "money": 77,
+                "alive": true
+            }
+        ]
     }
 }
