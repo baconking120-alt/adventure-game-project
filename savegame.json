@@ -1,6 +1,6 @@
 {
     "health": 30,
-    "gold": 5,
+    "gold": 167,
     "inventory": [
         {
             "name": "sword",
@@ -13,11 +13,6 @@
             "type": "shield",
             "maxDurability": 6,
             "currentDurability": 6
-        },
-        {
-            "name": "rock",
-            "type": "misc",
-            "note": "defeats one monster instantly"
         }
     ],
     "map_state": {
@@ -29,7 +24,20 @@
             0,
             0
         ],
-        "monsters": [],
-        "visited_town": false
+        "visited_town": true,
+        "monsters": [
+            {
+                "name": "Gnome",
+                "mtype": "Gnome",
+                "pos": [
+                    8,
+                    1
+                ],
+                "health": 35,
+                "power": 8,
+                "money": 36,
+                "alive": true
+            }
+        ]
     }
 }
